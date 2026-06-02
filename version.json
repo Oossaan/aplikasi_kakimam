@@ -1,7 +1,7 @@
-{
-  "version": "1.0.1",
-  "release_notes": "- Perbaikan bug tampilan di layar kecil\n- Fitur update otomatis\n- Perbaikan responsif halaman POS",
-  "apk_url": "https://github.com/Oossaan/aplikasi_kakimam/releases/tag/1.0.1",
-  "exe_url": "https://github.com/Oossaan/aplikasi_kakimam/releases/tag/1.0.1",
-  "release_date": "2026-04-26"
-}
+     {
+       "version": "1.0.2",
+       "release_notes": "- Deskripsi fitur baru Anda...",
+       "apk_url": "https://github.com/Oossaan/aplikasi_kakimam/releases/latest/download/app-release.apk",
+       "exe_url": "https://github.com/Oossaan/aplikasi_kakimam/releases/latest/download/inventory_pos_windows.zip",
+       "release_date": "2026-06-02"
+     }
