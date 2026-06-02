@@ -81,6 +81,32 @@ class SettingsController extends ChangeNotifier {
     return await updateSettings(newSettings);
   }
 
+  Future<bool> updateTransactionSettings({
+    String? defaultPaymentMethod,
+    String? invoicePrefix,
+    bool? showStockOnReceipt,
+    bool? autoPrintAfterSale,
+  }) async {
+    final newSettings = _settings.copyWith(
+      defaultPaymentMethod: defaultPaymentMethod,
+      invoicePrefix: invoicePrefix,
+      showStockOnReceipt: showStockOnReceipt,
+      autoPrintAfterSale: autoPrintAfterSale,
+    );
+    return await updateSettings(newSettings);
+  }
+
+  Future<bool> updateSecuritySettings({
+    bool? autoAllowDelete,
+    bool? autoAllowVoid,
+  }) async {
+    final newSettings = _settings.copyWith(
+      autoAllowDelete: autoAllowDelete,
+      autoAllowVoid: autoAllowVoid,
+    );
+    return await updateSettings(newSettings);
+  }
+
   Future<bool> updateUserProfile({
     required int userId,
     required String name,

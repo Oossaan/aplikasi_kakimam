@@ -61,7 +61,8 @@
       "Bash(flutter analyze lib/controllers/report_controller.dart lib/views/reports/profit_report_page.dart)",
       "Bash(flutter analyze lib/controllers/report_controller.dart)",
       "Bash(flutter analyze lib/views/reports/stock_report_page.dart)",
-      "Bash(flutter analyze lib/views/reports/stock_report_page.dart lib/views/supplier/supplier_stock_history_page.dart lib/views/outlet/outlet_stock_history_page.dart)"
+      "Bash(flutter analyze lib/views/reports/stock_report_page.dart lib/views/supplier/supplier_stock_history_page.dart lib/views/outlet/outlet_stock_history_page.dart)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }

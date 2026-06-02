@@ -55,11 +55,14 @@ class UpdateService {
         if (_isNewerVersion(updateInfo.version, currentVersion)) {
           return updateInfo;
         }
+      } else if (response.statusCode == 404) {
+        throw Exception('File version.json tidak ditemukan di repository. Pastikan repo dan file sudah ada.');
+      } else {
+        throw Exception('Gagal mengambil info update. Status: ${response.statusCode}');
       }
-      return null;
     } catch (e) {
       debugPrint('Error checking for updates: $e');
-      return null;
+      rethrow; // Rethrow agar bisa ditangkap di UI
     }
   }
 

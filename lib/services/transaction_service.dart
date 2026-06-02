@@ -164,7 +164,7 @@ class TransactionService {
           outletPhone: outletPhone ?? transactionMap['outletPhone'] as String?,
           userId: transactionMap['userId'] as int?,
           userName: userName,
-          status: TransactionStatus.paid,
+          status: _parseStatus(transactionMap),
           customerName: transactionMap['customerName'] as String?,
           notes: transactionMap['notes'] as String?,
           supplierName: supplierName,
@@ -172,6 +172,9 @@ class TransactionService {
           supplierPhone: supplierPhone,
           salesName: salesName,
           salesPhone: salesPhone,
+          shipmentDate: transactionMap['due_date'] != null
+              ? DateTime.tryParse(transactionMap['due_date'] as String)
+              : null,
           items: items,
           appliedDiscounts: appliedDiscounts,
         ));
@@ -297,7 +300,7 @@ class TransactionService {
           outletPhone: outletPhone ?? transactionMap['outletPhone'] as String?,
           userId: transactionMap['userId'] as int?,
           userName: userName,
-          status: TransactionStatus.paid,
+          status: _parseStatus(transactionMap),
           customerName: transactionMap['customerName'] as String?,
           notes: transactionMap['notes'] as String?,
           supplierName: supplierName,
@@ -305,6 +308,9 @@ class TransactionService {
           supplierPhone: supplierPhone,
           salesName: salesName,
           salesPhone: salesPhone,
+          shipmentDate: transactionMap['due_date'] != null
+              ? DateTime.tryParse(transactionMap['due_date'] as String)
+              : null,
           items: items,
           appliedDiscounts: appliedDiscounts,
         );
@@ -1062,5 +1068,19 @@ static Future<Map<String, dynamic>> getSalesSummary({
         'netSales': 0.0,
       };
     }
+  }
+
+  /// Parse TransactionStatus dari map database.
+  /// Membaca kolom `status` dan `payment_status` untuk menentukan status yang benar.
+  static TransactionStatus _parseStatus(Map<String, dynamic> map) {
+    final status = (map['status'] as String?)?.toUpperCase();
+    final paymentStatus = (map['payment_status'] as String?)?.toUpperCase();
+
+    if (status == 'CANCELLED') return TransactionStatus.cancelled;
+    if (status == 'REFUNDED') return TransactionStatus.refunded;
+    if (paymentStatus == 'UNPAID' || paymentStatus == 'PARTIAL') {
+      return TransactionStatus.pending;
+    }
+    return TransactionStatus.paid;
   }
 }

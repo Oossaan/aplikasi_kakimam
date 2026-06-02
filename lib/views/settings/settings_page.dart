@@ -43,8 +43,17 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _obscureLoginPassword = true;
   bool _isEditingBank = false;
   bool _isEditingPin = false;
+  bool _isEditingTransaction = false;
+  bool _isEditingSecurity = false;
   bool _pinEnabled = false;
   String _currentVersion = '1.0.0';
+
+  TextEditingController? _invoicePrefixController;
+  bool _showStockOnReceipt = true;
+  bool _autoPrintAfterSale = false;
+  bool _autoAllowDelete = false;
+  bool _autoAllowVoid = false;
+  String _defaultPaymentMethod = 'Cash';
 
   @override
   void initState() {
@@ -69,6 +78,12 @@ class _SettingsPageState extends State<SettingsPage> {
     _confirmPinController = TextEditingController();
     _loginPasswordForPinController = TextEditingController();
     _pinEnabled = settingsController.settings.isPinEnabled;
+    _invoicePrefixController = TextEditingController(text: settingsController.settings.invoicePrefix);
+    _showStockOnReceipt = settingsController.settings.showStockOnReceipt;
+    _autoPrintAfterSale = settingsController.settings.autoPrintAfterSale;
+    _autoAllowDelete = settingsController.settings.autoAllowDelete;
+    _autoAllowVoid = settingsController.settings.autoAllowVoid;
+    _defaultPaymentMethod = settingsController.settings.defaultPaymentMethod;
 
     _loadCurrentVersion();
   }
@@ -104,6 +119,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _pinController.dispose();
     _confirmPinController.dispose();
     _loginPasswordForPinController.dispose();
+    _invoicePrefixController?.dispose();
     super.dispose();
   }
 
@@ -137,6 +153,38 @@ class _SettingsPageState extends State<SettingsPage> {
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Preferensi berhasil disimpan'), backgroundColor: Colors.green),
+      );
+    }
+  }
+
+  Future<void> _saveTransactionSettings() async {
+    final controller = context.read<SettingsController>();
+    final success = await controller.updateTransactionSettings(
+      defaultPaymentMethod: _defaultPaymentMethod,
+      invoicePrefix: _invoicePrefixController?.text.trim() ?? '',
+      showStockOnReceipt: _showStockOnReceipt,
+      autoPrintAfterSale: _autoPrintAfterSale,
+    );
+
+    if (success && mounted) {
+      setState(() => _isEditingTransaction = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pengaturan transaksi berhasil disimpan'), backgroundColor: Colors.green),
+      );
+    }
+  }
+
+  Future<void> _saveSecuritySettings() async {
+    final controller = context.read<SettingsController>();
+    final success = await controller.updateSecuritySettings(
+      autoAllowDelete: _autoAllowDelete,
+      autoAllowVoid: _autoAllowVoid,
+    );
+
+    if (success && mounted) {
+      setState(() => _isEditingSecurity = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pengaturan keamanan berhasil disimpan'), backgroundColor: Colors.green),
       );
     }
   }
@@ -442,11 +490,11 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           iconColor: const Color(0xFF667eea),
           collapsedIconColor: Colors.grey.shade400,
-          childrenPadding: const EdgeInsets.only(left: 16, right: 16, bottom: 20),
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
           expandedAlignment: Alignment.topLeft,
-          children: [
-            child,
-          ],
+          expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [child],
         ),
       ),
     );
@@ -512,6 +560,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
+              physics: const AlwaysScrollableScrollPhysics(),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -998,7 +1047,224 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     ),
 
-                    // ==== FAQ ====\r\n                    _buildCollapsibleCard(\r\n                      title: 'FAQ (Pertanyaan Umum)',\r\n                      icon: PhosphorIcons.chatCircleDots(PhosphorIconsStyle.bold),\r\n                      child: Column(\r\n                        children: [\r\n                          ExpansionTile(\r\n                            title: const Text('Bagaimana cara melakukan pembayaran piutang?'),\r\n                            children: [\r\n                              Padding(\r\n                                padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),\r\n                                child: const Text(\r\n                                  'Buka menu “Piutang & Tagihan”. Pada tab “Tempo Outlet” pilih invoice yang belum lunas, lalu tekan tombol “BAYAR”. Jika berhasil, status akan berubah menjadi PAID atau PARTIAL sesuai sisa pembayaran.',\r\n                                  style: TextStyle(fontSize: 13, color: Colors.black54),\r\n                                ),\r\n                              ),\r\n                            ],\r\n                          ),\r\n                          ExpansionTile(\r\n                            title: const Text('Apa perbedaan Tempo & Riwayat?'),\r\n                            children: [\r\n                              Padding(\r\n                                padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),\r\n                                child: const Text(\r\n                                  'Tempo menampilkan data yang belum/masih berjalan (UNPAID/PARTIAL). Riwayat menampilkan data yang sudah selesai (PAID).',\r\n                                  style: TextStyle(fontSize: 13, color: Colors.black54),\r\n                                ),\r\n                              ),\r\n                            ],\r\n                          ),\r\n                          ExpansionTile(\r\n                            title: const Text('Mengapa saya tidak bisa menghapus hutang yang sudah dibayar?'),\r\n                            children: [\r\n                              Padding(\r\n                                padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),\r\n                                child: const Text(\r\n                                  'Agar integritas data terjaga, hutang dengan status PARTIAL/PAID tidak dapat dihapus. Tindakan yang tersedia adalah sesuai aturan pada status tersebut.',\r\n                                  style: TextStyle(fontSize: 13, color: Colors.black54),\r\n                                ),\r\n                              ),\r\n                            ],\r\n                          ),\r\n                          ExpansionTile(\r\n                            title: const Text('Apa fungsi PIN pada aplikasi ini?'),\r\n                            children: [\r\n                              Padding(\r\n                                padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),\r\n                                child: const Text(\r\n                                  'PIN digunakan untuk mengamankan operasi sensitif seperti menghapus transaksi. Anda bisa mengaktifkan/ubah PIN di bagian “Pengaturan PIN Keamanan”.',\r\n                                  style: TextStyle(fontSize: 13, color: Colors.black54),\r\n                                ),\r\n                              ),\r\n                            ],\r\n                          ),\r\n                        ],\r\n                      ),\r\n                    ),\r\n\r\n                    // ==== TENTANG APLIKASI ====\r\n                    _buildCollapsibleCard(\r\n                      title: 'Tentang Aplikasi',\r\n                      icon: PhosphorIcons.info(PhosphorIconsStyle.bold),\r\n                      child: Column(\r\n                        children: [\r\n                          _buildInfoRow('Nama Aplikasi', 'Inventory & POS System'),\r\n                          const Divider(height: 20),\r\n                          _buildInfoRow('Versi', _currentVersion),\r\n                          const Divider(height: 20),\r\n                          _buildInfoRow('Pengembang', 'OmegaCoders'),\r\n                          const SizedBox(height: 16),\r\n                          SizedBox(\r\n                            width: double.infinity,\r\n                            child: OutlinedButton.icon(\r\n                              onPressed: _checkForUpdate,\r\n                              icon: Icon(PhosphorIcons.cloudArrowDown(PhosphorIconsStyle.bold)),\r\n                              label: const Text('PERIKSA UPDATE'),\r\n                              style: OutlinedButton.styleFrom(\r\n                                padding: const EdgeInsets.symmetric(vertical: 14),\r\n                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),\r\n                              ),\r\n                            ),\r\n                          ),\r\n                        ],\r\n                      ),\r\n                    ),\r\n
+                    // ==== PENGATURAN TRANSAKSI ====
+                    _buildCollapsibleCard(
+                      title: 'Pengaturan Transaksi',
+                      icon: PhosphorIcons.receipt(PhosphorIconsStyle.bold),
+                      child: Column(
+                        children: [
+                          if (!_isEditingTransaction) ...[
+                            _buildInfoRow('Metode Bayar Default', settings.defaultPaymentMethod),
+                            const Divider(height: 20),
+                            _buildInfoRow('Prefix Invoice', settings.invoicePrefix),
+                            const Divider(height: 20),
+                            _buildInfoRow('Tampilkan Stok di Receipt', settings.showStockOnReceipt ? 'Ya' : 'Tidak'),
+                            const Divider(height: 20),
+                            _buildInfoRow('Auto Print Setelah Jual', settings.autoPrintAfterSale ? 'Ya' : 'Tidak'),
+                            const SizedBox(height: 12),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton.icon(
+                                onPressed: () => setState(() => _isEditingTransaction = true),
+                                icon: Icon(PhosphorIcons.pencilSimple(PhosphorIconsStyle.bold), size: 14),
+                                label: const Text('Edit'),
+                              ),
+                            ),
+                          ] else ...[
+                            DropdownButtonFormField<String>(
+                              value: _defaultPaymentMethod,
+                              decoration: _customInputDecoration(
+                                label: 'Metode Bayar Default',
+                                prefixIcon: PhosphorIcons.wallet(PhosphorIconsStyle.bold),
+                              ),
+                              items: ['Cash', 'Transfer', 'QRIS', 'Tempo'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                              onChanged: (value) => setState(() => _defaultPaymentMethod = value ?? 'Cash'),
+                            ),
+                            const SizedBox(height: 12),
+                            TextFormField(
+                              controller: _invoicePrefixController!,
+                              decoration: _customInputDecoration(
+                                label: 'Prefix Invoice',
+                                prefixIcon: PhosphorIcons.hash(PhosphorIconsStyle.bold),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            SwitchListTile(
+                              title: const Text('Tampilkan Stok di Receipt'),
+                              value: _showStockOnReceipt,
+                              activeColor: const Color(0xFF667eea),
+                              onChanged: (value) => setState(() => _showStockOnReceipt = value),
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            SwitchListTile(
+                              title: const Text('Auto Print Setelah Jual'),
+                              value: _autoPrintAfterSale,
+                              activeColor: const Color(0xFF667eea),
+                              onChanged: (value) => setState(() => _autoPrintAfterSale = value),
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                TextButton(
+                                  onPressed: () => setState(() => _isEditingTransaction = false),
+                                  child: const Text('Batal'),
+                                ),
+                                const SizedBox(width: 8),
+                                ElevatedButton(
+                                  onPressed: _saveTransactionSettings,
+                                  child: const Text('Simpan'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+
+                    // ==== PENGATURAN KEAMANAN ====
+                    _buildCollapsibleCard(
+                      title: 'Pengaturan Keamanan',
+                      icon: PhosphorIcons.shieldCheck(PhosphorIconsStyle.bold),
+                      child: Column(
+                        children: [
+                          if (!_isEditingSecurity) ...[
+                            _buildInfoRow('Auto Allow Hapus Tanpa PIN', settings.autoAllowDelete ? 'Ya' : 'Tidak'),
+                            const Divider(height: 20),
+                            _buildInfoRow('Auto Allow Void Tanpa PIN', settings.autoAllowVoid ? 'Ya' : 'Tidak'),
+                            const SizedBox(height: 12),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton.icon(
+                                onPressed: () => setState(() => _isEditingSecurity = true),
+                                icon: Icon(PhosphorIcons.pencilSimple(PhosphorIconsStyle.bold), size: 14),
+                                label: const Text('Edit'),
+                              ),
+                            ),
+                          ] else ...[
+                            SwitchListTile(
+                              title: const Text('Auto Allow Hapus Tanpa PIN'),
+                              subtitle: Text('Izinkan hapus transaksi tanpa input PIN', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                              value: _autoAllowDelete,
+                              activeColor: const Color(0xFF667eea),
+                              onChanged: (value) => setState(() => _autoAllowDelete = value),
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            SwitchListTile(
+                              title: const Text('Auto Allow Void Tanpa PIN'),
+                              subtitle: Text('Izinkan void transaksi tanpa input PIN', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                              value: _autoAllowVoid,
+                              activeColor: const Color(0xFF667eea),
+                              onChanged: (value) => setState(() => _autoAllowVoid = value),
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                TextButton(
+                                  onPressed: () => setState(() => _isEditingSecurity = false),
+                                  child: const Text('Batal'),
+                                ),
+                                const SizedBox(width: 8),
+                                ElevatedButton(
+                                  onPressed: _saveSecuritySettings,
+                                  child: const Text('Simpan'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+
+                    // ==== FAQ ====
+                    _buildCollapsibleCard(
+                      title: 'FAQ (Pertanyaan Umum)',
+                      icon: PhosphorIcons.chatCircleDots(PhosphorIconsStyle.bold),
+                      child: Column(
+                        children: [
+                          ExpansionTile(
+                            title: const Text('Bagaimana cara melakukan pembayaran piutang?'),
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
+                                child: const Text(
+                                  'Buka menu “Piutang & Tagihan”. Pada tab “Tempo Outlet” pilih invoice yang belum lunas, lalu tekan tombol “BAYAR”. Jika berhasil, status akan berubah menjadi PAID atau PARTIAL sesuai sisa pembayaran.',
+                                  style: TextStyle(fontSize: 13, color: Colors.black54),
+                                ),
+                              ),
+                            ],
+                          ),
+                          ExpansionTile(
+                            title: const Text('Apa perbedaan Tempo & Riwayat?'),
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
+                                child: const Text(
+                                  'Tempo menampilkan data yang belum/masih berjalan (UNPAID/PARTIAL). Riwayat menampilkan data yang sudah selesai (PAID).',
+                                  style: TextStyle(fontSize: 13, color: Colors.black54),
+                                ),
+                              ),
+                            ],
+                          ),
+                          ExpansionTile(
+                            title: const Text('Mengapa saya tidak bisa menghapus hutang yang sudah dibayar?'),
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
+                                child: const Text(
+                                  'Agar integritas data terjaga, hutang dengan status PARTIAL/PAID tidak dapat dihapus. Tindakan yang tersedia adalah sesuai aturan pada status tersebut.',
+                                  style: TextStyle(fontSize: 13, color: Colors.black54),
+                                ),
+                              ),
+                            ],
+                          ),
+                          ExpansionTile(
+                            title: const Text('Apa fungsi PIN pada aplikasi ini?'),
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
+                                child: const Text(
+                                  'PIN digunakan untuk mengamankan operasi sensitif seperti menghapus transaksi. Anda bisa mengaktifkan/ubah PIN di bagian “Pengaturan PIN Keamanan”.',
+                                  style: TextStyle(fontSize: 13, color: Colors.black54),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // ==== TENTANG APLIKASI ====
+                    _buildCollapsibleCard(
+                      title: 'Tentang Aplikasi',
+                      icon: PhosphorIcons.info(PhosphorIconsStyle.bold),
+                      child: Column(
+                        children: [
+                          _buildInfoRow('Nama Aplikasi', 'Inventory & POS System'),
+                          const Divider(height: 20),
+                          _buildInfoRow('Versi', _currentVersion),
+                          const Divider(height: 20),
+                          _buildInfoRow('Pengembang', 'OmegaCoders'),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: _checkForUpdate,
+                              icon: Icon(PhosphorIcons.cloudArrowDown(PhosphorIconsStyle.bold)),
+                              label: const Text('PERIKSA UPDATE'),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
 
                     // ==== LOGOUT ====
                     Container(
@@ -1038,27 +1304,28 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            flex: 2,
+          SizedBox(
+            width: 140,
             child: Text(
               label,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 13,
                 color: Colors.grey.shade600,
               ),
             ),
           ),
+          const SizedBox(width: 8),
           Expanded(
-            flex: 3,
             child: Text(
               value,
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
+                color: Color(0xFF1f2937),
               ),
             ),
           ),
